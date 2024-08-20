@@ -33,7 +33,7 @@ class Words(BaseModel):
     words: str
 
 # Initialize the OpenAI client
-client = OpenAI()
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.post("/pipeline")
 async def predict_image(items: Words):
