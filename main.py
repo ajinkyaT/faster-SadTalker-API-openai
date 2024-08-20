@@ -1,6 +1,7 @@
 from fastapi import FastAPI , status , HTTPException
 from pydantic import BaseModel
 from loguru import logger
+from openai import OpenAI
 
 from time import strftime
 from time import time
@@ -17,7 +18,7 @@ import os, sys
 import base64
 import os
 
-tts_service = os.getenv("TTS_SERVER")
+# tts_service = os.getenv("TTS_SERVER")
 pic_path ="./sadtalker_default.jpeg"
 facerender_batch_size = 10
 sadtalker_paths = init_path("./checkpoints", os.path.join("/home/SadTalker", 'src/config'), "256", False, "full")
@@ -31,21 +32,25 @@ app = FastAPI()
 class Words(BaseModel):
     words: str
 
+# Initialize the OpenAI client
+client = OpenAI()
 
 @app.post("/pipeline")
-async def predict_image(items:Words):
+async def predict_image(items: Words):
     save_dir = os.path.join("/home/SadTalker/results", strftime("%Y_%m_%d_%H.%M.%S"))
     """
     从语音服务器获取语音内容
     """
     try:
-        tts_json = json.dumps({"text": items.words,"model_id": "zhisha"})
-        tts_result = requests.post(url=tts_service,data=tts_json).json()["wav"]
-        print(tts_result)
-        audio_data = base64.b64decode(tts_result)
         audio_path = "/home/SadTalker/001.wav"
-        with open(audio_path, "wb") as audio_file:
-            audio_file.write(audio_data)
+        # Use OpenAI API to convert text to speech and save to audio_path
+        with client.audio.speech.with_streaming_response.create(
+            model='tts-1',
+            voice='alloy',
+            input=items.words,
+            response_format="wav"
+        ) as response:
+            response.stream_to_file(audio_path)
     except Exception as e:
         errors = str(e)
         mod_errors = errors.replace('"', '**').replace("'", '**')
