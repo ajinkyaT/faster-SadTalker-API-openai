@@ -44,6 +44,7 @@ async def predict_image(items: Words):
     try:
         audio_path = "/home/SadTalker/001.wav"
         # Use OpenAI API to convert text to speech and save to audio_path
+        logger.info(f"Got words: {items.words}")
         with client.audio.speech.with_streaming_response.create(
             model='tts-1',
             voice='alloy',
